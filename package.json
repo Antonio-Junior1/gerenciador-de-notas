@@ -16,6 +16,7 @@
     "desktop:pack": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --dir",
     "desktop:win-dir": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir",
     "desktop:portable": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir && node scripts/prepare-portable.mjs",
+    "desktop:portable-simple": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir && node scripts/prepare-portable.mjs && node scripts/prepare-simple-portable.mjs",
     "desktop:dist": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win nsis"
   },
   "dependencies": {

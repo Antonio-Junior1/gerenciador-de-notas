@@ -73,3 +73,14 @@
 - [x] Validar que o destinatário não precisa instalar Node.js ou pnpm
 - [x] Incluir instruções simples de extrair e abrir
 - [x] Verificar persistência de dados no uso portátil
+
+## Correção do pacote Windows
+- [x] Diagnosticar incompatibilidade do executável portátil no computador do usuário
+- [x] Gerar pacote compatível com a arquitetura Windows correta
+- [x] Validar integridade do ZIP e instruções de execução
+- [x] Gerar artefatos nativos Windows x64 sem incluir binários Linux
+- [x] Recriar ZIP portátil após a correção de plataforma
+- [x] Validar executável e estrutura de recursos do novo pacote
+- [x] Colocar o executável principal na raiz do pacote portátil
+- [x] Criar inicialização simples sem caminho técnico visível ao usuário
+- [x] Recriar ZIP com instruções mínimas de abrir e usar
