@@ -1,0 +1,19 @@
+# Gerenciador de Notas TODO
+
+- [x] Criar identidade visual do Gerenciador de Notas
+- [ ] Implementar autenticação e isolamento dos dados por usuário
+- [ ] Modelar notas fiscais, boletos, empresas, categorias e documentos
+- [x] Implementar cadastro manual de nota e boleto
+- [x] Implementar importação e leitura de XML de NF-e/NFS-e
+- [x] Implementar upload e leitura inicial de PDF de boleto
+- [x] Implementar upload e leitura inicial de imagem de boleto
+- [x] Criar revisão manual dos dados extraídos antes de salvar
+- [ ] Armazenar documentos originais com segurança em storage de objetos
+- [x] Criar dashboard com entradas, saídas, vencimentos e total mensal
+- [x] Criar alerta visual para boletos vencendo no dia
+- [x] Criar filtros por mês, empresa, tipo, categoria e status
+- [x] Criar exportação estruturada para XLSX/CSV
+- [x] Documentar que a exportação é para conferência e deve ser validada por contador
+- [x] Adicionar limites de upload e proteção contra arquivos inválidos
+- [ ] Escrever testes para parser XML, extração de boleto, regras de vencimento e exportação
+- [x] Validar tipos, testes, build e compatibilidade com Vercel
