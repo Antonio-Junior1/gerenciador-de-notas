@@ -22,3 +22,7 @@
 - [x] Tornar filtros, importação, exportação, cadastro e alertas testáveis na interface
 - [x] Remover placeholders silenciosos e informar quando uma função ainda estiver em preparação
 - [x] Validar os fluxos principais com lint, build e teste manual no preview
+- [x] Corrigir o botão Manual para abrir o formulário de cadastro
+- [x] Corrigir o botão Documentos para ativar a visão de documentos
+- [x] Corrigir ações equivalentes em botões de importação, novo registro e navegação
+- [x] Reproduzir os cliques no preview e validar os fluxos após a correção
