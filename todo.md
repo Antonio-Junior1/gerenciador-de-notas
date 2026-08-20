@@ -92,7 +92,7 @@
 - [ ] Validar o novo executável no Windows 11 x64 do usuário
 
 ## Publicação no GitHub
-- [ ] Auditar arquivos e remover artefatos locais da publicação
-- [ ] Atualizar README e documentação desktop para o estado atual
-- [ ] Enviar o código para o repositório GitHub
-- [ ] Confirmar o commit e a URL pública do repositório
+- [x] Auditar arquivos e remover artefatos locais da publicação
+- [x] Atualizar README e documentação desktop para o estado atual
+- [x] Enviar o código para o repositório GitHub
+- [x] Confirmar o commit e a URL pública do repositório
