@@ -53,6 +53,7 @@ const emptyForm = {
   issueDate: "",
   category: "Operacional",
   taxes: "",
+  source: "Manual" as NoteRecord["source"],
 };
 
 const initialRecords: NoteRecord[] = [];
@@ -129,7 +130,7 @@ export default function Home() {
         category: form.category,
         taxes: Number(form.taxes || 0),
         status: "Pendente",
-        source: "Manual",
+        source: form.source,
         reviewRequired: false,
       }),
     });
@@ -180,7 +181,8 @@ export default function Home() {
         document: draft.document || "",
         amount: String(draft.amount || ""),
         issueDate: draft.issueDate || "",
-        dueDate: draft.dueDate || "",
+        dueDate: draft.dueDate || draft.issueDate || "",
+        source: "XML",
         taxes: String(draft.taxes || ""),
       }));
       setShowForm(true);
@@ -196,7 +198,7 @@ export default function Home() {
       setUploadMessage(payload.error || "Não foi possível receber o documento.");
       return;
     }
-    setForm((current) => ({ ...current, type: "Boleto", document: payload.draft?.document || file.name }));
+    setForm((current) => ({ ...current, type: "Boleto", source: payload.draft?.source === "Imagem" ? "Imagem" : "PDF", document: payload.draft?.document || file.name }));
     setShowForm(true);
     setUploadMessage(payload.message || `${file.name} recebido para revisão manual.`);
   }

@@ -56,3 +56,14 @@
 - [x] Adicionar scripts de desenvolvimento, empacotamento e instalador Windows
 - [x] Adicionar testes unitários para armazenamento local
 - [ ] Validar o instalador `.exe` em uma máquina Windows
+
+## Rodada de testes local
+- [x] Testar carregamento da interface e navegação principal
+- [x] Testar cadastro manual pela API e pela interface
+- [x] Testar persistência após reinício do servidor local
+- [x] Testar importação e parsing de XML de NF-e/NFS-e
+- [x] Testar recebimento e salvamento local de PDF e imagem
+- [x] Testar exportação XLSX e alertas de vencimento
+- [x] Testar build desktop e registrar limitações do ambiente
+- [x] Corrigir preservação da origem XML/PDF/Imagem ao salvar registros importados
+- [x] Preencher automaticamente o vencimento retornado pelo parser XML
