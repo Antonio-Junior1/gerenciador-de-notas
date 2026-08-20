@@ -19,6 +19,9 @@
 
 # production
 /build
+/release/
+/.local-data/
+
 
 # misc
 .DS_Store

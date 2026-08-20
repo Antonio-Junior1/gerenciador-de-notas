@@ -40,3 +40,19 @@
 - [x] Conectar dashboard, vencimentos, filtros e exportação ao backend
 - [ ] Criar testes de integração do front-end com API e persistência
 - [ ] Validar segurança de upload, autorização e variáveis de ambiente na Vercel
+- [ ] Migrar a arquitetura web para aplicativo desktop local Windows
+- [ ] Definir armazenamento local e diretório de documentos/backup
+- [ ] Integrar seleção nativa de arquivos XML, PDF e imagem
+- [ ] Adaptar importação e exportação para execução offline
+- [ ] Configurar empacotamento e instalador `.exe`
+- [ ] Validar instalação, dados locais e backup
+
+## Marco desktop local
+- [x] Criar wrapper Electron com processo Next local e janela isolada
+- [x] Configurar Next standalone e build Webpack compatível com o empacotamento
+- [x] Persistir registros em JSON na pasta de dados local configurável
+- [x] Salvar XML, PDF e imagem originais na subpasta local de documentos
+- [x] Validar API offline com criação e leitura de registro persistente
+- [x] Adicionar scripts de desenvolvimento, empacotamento e instalador Windows
+- [x] Adicionar testes unitários para armazenamento local
+- [ ] Validar o instalador `.exe` em uma máquina Windows

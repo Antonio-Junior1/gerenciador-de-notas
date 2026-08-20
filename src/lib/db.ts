@@ -1,10 +1,12 @@
 import { neon } from "@neondatabase/serverless";
-import { createRecord, getRecords, type NoteDraft, type NoteRecord } from "./notes";
+import { createRecord, type NoteDraft, type NoteRecord } from "./notes";
+import { readLocalRecords, writeLocalRecords } from "./local-storage";
 
 const databaseUrl = process.env.NOTAS_DATABASE_URL;
 const hasValidDatabaseUrl = typeof databaseUrl === "string" && /^postgres(ql)?:\/\//.test(databaseUrl);
 const sql = hasValidDatabaseUrl ? neon(databaseUrl as string) : null;
 let schemaReady: Promise<void> | null = null;
+let localWriteQueue: Promise<void> = Promise.resolve();
 
 async function ensureSchema() {
   if (!sql) return;
@@ -41,14 +43,23 @@ function rowToRecord(row: Record<string, unknown>): NoteRecord {
 }
 
 export async function listPersistedRecords(userId = "local-demo"): Promise<NoteRecord[]> {
-  if (!sql) return getRecords();
+  if (!sql) return readLocalRecords();
   await ensureSchema();
   const rows = await sql`SELECT * FROM notes WHERE user_id = ${userId} ORDER BY created_at DESC`;
   return rows.map(rowToRecord);
 }
 
 export async function persistRecord(draft: NoteDraft, userId = "local-demo"): Promise<NoteRecord> {
-  if (!sql) return createRecord(draft);
+  if (!sql) {
+    const record = createRecord(draft);
+    localWriteQueue = localWriteQueue.then(async () => {
+      const records = await readLocalRecords();
+      const withoutDuplicate = records.filter((item) => item.id !== record.id);
+      await writeLocalRecords([record, ...withoutDuplicate]);
+    });
+    await localWriteQueue;
+    return record;
+  }
   await ensureSchema();
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();

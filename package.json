@@ -1,12 +1,20 @@
 {
   "name": "gerenciador-notas",
+  "main": "electron/main.cjs",
   "version": "0.1.0",
+  "description": "Aplicativo desktop local para organizar notas fiscais, boletos e documentos financeiros.",
+  "author": "Gerenciador de Notas",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "desktop:dev": "concurrently -k \"next dev -p 3210\" \"wait-on http://127.0.0.1:3210 && cross-env NOTAS_DESKTOP_URL=http://127.0.0.1:3210 electron electron/main.cjs\"",
+    "desktop:start": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron electron/main.cjs",
+    "desktop:pack": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --dir",
+    "desktop:dist": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win nsis"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -22,11 +30,40 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.gerenciadordenotas.desktop",
+    "productName": "Gerenciador de Notas",
+    "asar": false,
+    "files": [
+      ".next/standalone/**/*",
+      ".next/static/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "packageManager": "pnpm@11.21.0"
 }

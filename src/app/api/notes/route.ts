@@ -4,7 +4,7 @@ import type { NoteDraft } from "@/lib/notes";
 
 export async function GET(request: Request) {
   const userId = request.headers.get("x-demo-user") || "local-demo";
-  return NextResponse.json({ records: await listPersistedRecords(userId), storage: hasDatabase() ? "postgres" : "memory" });
+  return NextResponse.json({ records: await listPersistedRecords(userId), storage: hasDatabase() ? "postgres" : "local" });
 }
 
 export async function POST(request: Request) {
