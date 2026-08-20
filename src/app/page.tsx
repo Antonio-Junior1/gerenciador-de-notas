@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import {
   AlertTriangle,
@@ -71,6 +71,15 @@ export default function Home() {
   const [uploadMessage, setUploadMessage] = useState("");
   const [toast, setToast] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loadingRecords, setLoadingRecords] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/notes", { headers: { "x-demo-user": "local-demo" } })
+      .then((response) => response.json())
+      .then((payload: { records?: NoteRecord[] }) => setRecords(payload.records ?? []))
+      .catch(() => announce("Não foi possível carregar os documentos."))
+      .finally(() => setLoadingRecords(false));
+  }, []);
 
   const filteredRecords = useMemo(() => records.filter((record) => {
     const matchesSearch = `${record.company} ${record.document}`.toLowerCase().includes(search.toLowerCase());
@@ -101,28 +110,41 @@ export default function Home() {
     announce("Planilha XLSX exportada com sucesso.");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.company || !form.amount || !form.dueDate) return;
-    const record: NoteRecord = {
-      id: crypto.randomUUID(),
-      type: form.type,
-      company: form.company,
-      document: form.document || "Sem número informado",
-      amount: Number(form.amount),
-      dueDate: form.dueDate,
-      issueDate: form.issueDate || form.dueDate,
-      category: form.category,
-      taxes: Number(form.taxes || 0),
-      status: "Pendente",
-      source: "Manual",
-    };
-    setRecords((current) => [record, ...current]);
+    if (!form.company || !form.amount || !form.dueDate) {
+      announce("Preencha empresa, valor e vencimento antes de salvar.");
+      return;
+    }
+    const response = await fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-demo-user": "local-demo" },
+      body: JSON.stringify({
+        type: form.type,
+        company: form.company,
+        document: form.document || "Sem número informado",
+        amount: Number(form.amount),
+        dueDate: form.dueDate,
+        issueDate: form.issueDate || form.dueDate,
+        category: form.category,
+        taxes: Number(form.taxes || 0),
+        status: "Pendente",
+        source: "Manual",
+        reviewRequired: false,
+      }),
+    });
+    const payload = await response.json() as { record?: NoteRecord; error?: string };
+    if (!response.ok || !payload.record) {
+      announce(payload.error || "Não foi possível salvar o documento.");
+      return;
+    }
+    setRecords((current) => [payload.record as NoteRecord, ...current]);
     setForm(emptyForm);
     setShowForm(false);
+    announce("Documento salvo no backend.");
   }
 
-  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
     const maxBytes = 10 * 1024 * 1024;
@@ -140,30 +162,43 @@ export default function Home() {
     }
     const xmlFile = files.find((file) => file.name.toLowerCase().endsWith(".xml"));
     if (xmlFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const xml = new DOMParser().parseFromString(String(reader.result), "text/xml");
-          const text = (tag: string) => xml.getElementsByTagName(tag)[0]?.textContent?.trim() ?? "";
-          const company = text("xNome") || text("emitente") || "Empresa extraída do XML";
-          const amount = text("vNF") || text("vProd") || "";
-          const documentNumber = text("nNF") || text("número") || "";
-          const issueDate = text("dhEmi") || text("dEmi") || "";
-          setForm((current) => ({ ...current, type: "Nota fiscal", company, document: documentNumber, amount, issueDate: issueDate.slice(0, 10), dueDate: issueDate.slice(0, 10) }));
-          setShowForm(true);
-          setUploadMessage(`${xmlFile.name} lido. Revise os campos antes de salvar.`);
-        } catch {
-          setUploadMessage("Não foi possível interpretar este XML. Você pode preencher os dados manualmente.");
-        }
-      };
-      reader.readAsText(xmlFile);
+      const response = await fetch("/api/import/xml", {
+        method: "POST",
+        headers: { "Content-Type": "application/xml", "x-file-name": xmlFile.name },
+        body: await xmlFile.text(),
+      });
+      const payload = await response.json() as { draft?: Partial<NoteRecord>; message?: string; error?: string };
+      if (!response.ok || !payload.draft) {
+        setUploadMessage(payload.error || "Não foi possível interpretar este XML.");
+        return;
+      }
+      const draft = payload.draft;
+      setForm((current) => ({
+        ...current,
+        type: "Nota fiscal",
+        company: draft.company || "",
+        document: draft.document || "",
+        amount: String(draft.amount || ""),
+        issueDate: draft.issueDate || "",
+        dueDate: draft.dueDate || "",
+        taxes: String(draft.taxes || ""),
+      }));
+      setShowForm(true);
+      setUploadMessage(payload.message || `${xmlFile.name} lido. Revise os campos antes de salvar.`);
       return;
     }
     const file = files[0];
-    const source = file.type === "application/pdf" ? "PDF" : "Imagem";
-    setForm((current) => ({ ...current, type: "Boleto" }));
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch("/api/import/document", { method: "POST", body: formData });
+    const payload = await response.json() as { draft?: Partial<NoteRecord>; message?: string; error?: string };
+    if (!response.ok || !payload.draft) {
+      setUploadMessage(payload.error || "Não foi possível receber o documento.");
+      return;
+    }
+    setForm((current) => ({ ...current, type: "Boleto", document: payload.draft?.document || file.name }));
     setShowForm(true);
-    setUploadMessage(`${file.name} recebido como ${source}. Revise e complete os dados antes de salvar.`);
+    setUploadMessage(payload.message || `${file.name} recebido para revisão manual.`);
   }
 
   function exportWorkbook() {
@@ -224,7 +259,7 @@ export default function Home() {
             <article className="summary-card"><div className="summary-head"><span>Para revisar</span><span className="metric-icon gold"><Sparkles size={16} /></span></div><strong>{pendingReview}</strong><p>dados aguardando conferência</p></article>
           </section>
 
-          <section className="content-card documents-card"><div className="card-heading"><div><p className="eyebrow">Documentos recentes</p><h2>Notas e boletos</h2></div><div className="heading-actions"><label className="secondary-button upload-button"><Upload size={15} /> Importar arquivo<input type="file" accept=".xml,.pdf,image/*" multiple onChange={handleFiles} /></label><button type="button" className="primary-button small" onClick={() => { setActiveView("Documentos"); setShowForm(true); }}><Plus size={15} /> Manual</button></div></div>
+          <section className="content-card documents-card" aria-busy={loadingRecords}><div className="card-heading"><div><p className="eyebrow">Documentos recentes</p><h2>Notas e boletos</h2></div><div className="heading-actions"><label className="secondary-button upload-button"><Upload size={15} /> Importar arquivo<input type="file" accept=".xml,.pdf,image/*" multiple onChange={handleFiles} /></label><button type="button" className="primary-button small" onClick={() => { setActiveView("Documentos"); setShowForm(true); }}><Plus size={15} /> Manual</button></div></div>
             {uploadMessage && <div className="upload-message"><Check size={15} /> {uploadMessage} <button onClick={() => setUploadMessage("")}><X size={14} /></button></div>}
             <div className="toolbar"><div className="search-field"><Search size={16} /><input placeholder="Buscar por empresa ou documento" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div className="filter-field"><CalendarDays size={15} /><input type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></div><button className="filter-button" onClick={() => setTypeFilter(typeFilter === "Todos" ? "Nota fiscal" : typeFilter === "Nota fiscal" ? "Boleto" : "Todos")}><Filter size={15} /> {typeFilter}</button><button className="export-button" onClick={handleExport}><FileSpreadsheet size={15} /> Exportar XLSX</button></div>
             {filteredRecords.length ? <div className="table-wrap"><table><thead><tr><th>Documento</th><th>Empresa</th><th>Vencimento</th><th>Categoria</th><th>Valor</th><th>Status</th></tr></thead><tbody>{filteredRecords.map((record) => <tr key={record.id}><td><div className="doc-cell"><span className={record.type === "Boleto" ? "doc-icon boleto" : "doc-icon nota"}>{record.type === "Boleto" ? <FileText size={16} /> : <ReceiptText size={16} />}</span><div><b>{record.document}</b><small>{record.type} · {record.source}</small></div></div></td><td>{record.company}</td><td>{dateLabel(record.dueDate)}</td><td><span className="category-tag">{record.category}</span></td><td className="amount-cell">{currency.format(record.amount)}</td><td><span className={`status status-${record.status.toLowerCase()}`}>{record.status}</span></td></tr>)}</tbody></table></div> : <div className="empty-state"><div className="empty-icon"><CloudUpload size={22} /></div><h3>Seu arquivo financeiro começa aqui.</h3><p>Importe um XML, PDF ou imagem, ou crie seu primeiro registro manual.</p><div className="empty-actions"><label className="secondary-button upload-button"><Upload size={15} /> Importar arquivo<input type="file" accept=".xml,.pdf,image/*" multiple onChange={handleFiles} /></label><button className="primary-button small" onClick={() => { setActiveView("Documentos"); setShowForm(true); }}><Plus size={15} /> Novo registro</button></div></div>}

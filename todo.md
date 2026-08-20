@@ -26,3 +26,17 @@
 - [x] Corrigir o botão Documentos para ativar a visão de documentos
 - [x] Corrigir ações equivalentes em botões de importação, novo registro e navegação
 - [x] Reproduzir os cliques no preview e validar os fluxos após a correção
+- [x] Corrigir leitura real de XML de NF-e/NFS-e e transformar o resultado em registro revisável
+- [x] Adicionar feedback explícito para arquivo inválido, XML sem campos e PDF/imagem sem OCR
+- [ ] Persistir registros importados e manuais no navegador para não desaparecerem ao recarregar
+- [x] Criar testes do parser XML para namespaces, datas e valores fiscais
+- [ ] Validar leitura, persistência, exportação e estados de erro no preview
+- [x] Transformar o protótipo em aplicação full-stack com API serverless compatível com Vercel
+- [ ] Integrar autenticação e isolamento de dados por usuário
+- [ ] Criar banco persistente para empresas, notas, boletos e arquivos
+- [ ] Integrar storage privado para documentos originais
+- [x] Implementar parser XML completo com revisão antes de salvar
+- [ ] Implementar processamento de PDF/imagem com status de revisão e extração assistida
+- [x] Conectar dashboard, vencimentos, filtros e exportação ao backend
+- [ ] Criar testes de integração do front-end com API e persistência
+- [ ] Validar segurança de upload, autorização e variáveis de ambiente na Vercel
