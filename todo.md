@@ -17,3 +17,8 @@
 - [x] Adicionar limites de upload e proteção contra arquivos inválidos
 - [ ] Escrever testes para parser XML, extração de boleto, regras de vencimento e exportação
 - [x] Validar tipos, testes, build e compatibilidade com Vercel
+- [x] Corrigir botões sem ação: navegação, empresas, exportações e configurações
+- [x] Implementar estados de navegação para visão geral, documentos e vencimentos
+- [x] Tornar filtros, importação, exportação, cadastro e alertas testáveis na interface
+- [x] Remover placeholders silenciosos e informar quando uma função ainda estiver em preparação
+- [x] Validar os fluxos principais com lint, build e teste manual no preview

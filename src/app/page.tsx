@@ -69,19 +69,37 @@ export default function Home() {
   const [typeFilter, setTypeFilter] = useState<"Todos" | RecordType>("Todos");
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [uploadMessage, setUploadMessage] = useState("");
+  const [toast, setToast] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const filteredRecords = useMemo(() => records.filter((record) => {
     const matchesSearch = `${record.company} ${record.document}`.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === "Todos" || record.type === typeFilter;
     const matchesMonth = !month || record.issueDate.startsWith(month) || record.dueDate.startsWith(month);
-    return matchesSearch && matchesType && matchesMonth;
-  }), [records, search, typeFilter, month]);
+    const matchesView = activeView !== "Vencimentos" || (record.type === "Boleto" && record.status !== "Pago");
+    return matchesSearch && matchesType && matchesMonth && matchesView;
+  }), [records, search, typeFilter, month, activeView]);
 
   const monthRecords = records.filter((record) => record.issueDate.startsWith(month) || record.dueDate.startsWith(month));
   const notesTotal = monthRecords.filter((record) => record.type === "Nota fiscal").reduce((sum, record) => sum + record.amount, 0);
   const billsTotal = monthRecords.filter((record) => record.type === "Boleto").reduce((sum, record) => sum + record.amount, 0);
   const dueToday = records.filter((record) => record.type === "Boleto" && record.dueDate === new Date().toISOString().slice(0, 10) && record.status !== "Pago");
   const pendingReview = records.filter((record) => record.status === "Revisar").length;
+  const companies = Array.from(new Set(records.map((record) => record.company).filter(Boolean)));
+
+  function announce(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 3200);
+  }
+
+  function handleExport() {
+    if (!filteredRecords.length) {
+      announce("Não há documentos no filtro atual para exportar.");
+      return;
+    }
+    exportWorkbook();
+    announce("Planilha XLSX exportada com sucesso.");
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -179,17 +197,22 @@ export default function Home() {
           <button className={activeView === "Documentos" ? "nav-item active" : "nav-item"} onClick={() => setActiveView("Documentos")}><FileText size={17} /> Documentos <span>{records.length}</span></button>
           <button className={activeView === "Vencimentos" ? "nav-item active" : "nav-item"} onClick={() => setActiveView("Vencimentos")}><CalendarDays size={17} /> Vencimentos {dueToday.length > 0 && <i>{dueToday.length}</i>}</button>
           <p className="nav-label section-label">Organização</p>
-          <button className="nav-item"><Landmark size={17} /> Empresas</button>
-          <button className="nav-item"><FileSpreadsheet size={17} /> Exportações</button>
-          <button className="nav-item"><Settings2 size={17} /> Configurações</button>
+          <button className={activeView === "Empresas" ? "nav-item active" : "nav-item"} onClick={() => setActiveView("Empresas")}><Landmark size={17} /> Empresas <span>{companies.length}</span></button>
+          <button className={activeView === "Exportações" ? "nav-item active" : "nav-item"} onClick={() => { setActiveView("Exportações"); handleExport(); }}><FileSpreadsheet size={17} /> Exportações</button>
+          <button className={activeView === "Configurações" ? "nav-item active" : "nav-item"} onClick={() => { setActiveView("Configurações"); announce("As configurações de persistência entram na próxima etapa."); }}><Settings2 size={17} /> Configurações</button>
         </nav>
         <div className="sidebar-footer"><div className="avatar">AJ</div><div><b>Antônio Junior</b><small>Conta pessoal</small></div><ChevronDown size={15} /></div>
       </aside>
 
       <section className="content-area">
-        <header className="topbar"><div className="mobile-brand"><Menu size={20} /><span>Gerenciador de notas</span></div><div className="topbar-actions"><span className="secure-note"><span className="online-dot" /> Dados protegidos</span><button className="icon-button" aria-label="Notificações"><BellRing size={18} />{dueToday.length > 0 && <span className="notification-dot" />}</button><button className="avatar top-avatar">AJ</button></div></header>
+        <header className="topbar"><div className="mobile-brand"><Menu size={20} /><span>Gerenciador de notas</span></div><div className="topbar-actions"><span className="secure-note"><span className="online-dot" /> Dados protegidos</span><button className="icon-button" aria-label="Notificações" onClick={() => { setActiveView("Vencimentos"); setTypeFilter("Boleto"); announce(dueToday.length ? `${dueToday.length} boleto(s) vencendo hoje.` : "Nenhum boleto vence hoje."); }}><BellRing size={18} />{dueToday.length > 0 && <span className="notification-dot" />}</button><div className="user-menu-wrap"><button className="avatar top-avatar" onClick={() => setUserMenuOpen((open) => !open)}>AJ</button>{userMenuOpen && <div className="user-menu"><b>Antônio Junior</b><small>Conta pessoal</small><button onClick={() => announce("A autenticação será conectada na próxima etapa.")}>Gerenciar conta</button></div>}</div></div></header>
         <div className="page-wrap">
           <div className="page-heading"><div><p className="eyebrow">Workspace financeiro</p><h1>Organize tudo em um só lugar.</h1><p className="page-subtitle">Notas, boletos e documentos prontos para sua conferência mensal.</p></div><button className="primary-button" onClick={() => setShowForm(true)}><Plus size={17} /> Novo registro</button></div>
+
+          {activeView === "Empresas" && <section className="context-panel"><div><p className="eyebrow">Organização</p><h2>Empresas cadastradas</h2><p>Quando os documentos forem persistidos, cada empresa poderá reunir suas notas e boletos.</p></div><span className="context-count">{companies.length}</span></section>}
+          {activeView === "Exportações" && <section className="context-panel"><div><p className="eyebrow">Centro de exportação</p><h2>Planilha de conferência</h2><p>Use o botão XLSX abaixo para exportar os registros que estão no filtro atual.</p></div><button className="primary-button small" onClick={handleExport}><FileSpreadsheet size={15} /> Exportar agora</button></section>}
+          {activeView === "Configurações" && <section className="context-panel"><div><p className="eyebrow">Preferências</p><h2>Configurações do workspace</h2><p>A persistência, autenticação e preferências avançadas serão conectadas na próxima etapa.</p></div><Settings2 size={21} color="#7b8a84" /></section>}
+          {activeView === "Vencimentos" && <section className="context-panel warning-panel"><div><p className="eyebrow">Agenda de vencimentos</p><h2>Boletos em aberto</h2><p>O filtro abaixo mostra boletos não pagos no mês selecionado.</p></div><BellRing size={21} color="#b84c3c" /></section>}
 
           {dueToday.length > 0 && <div className="due-alert"><div className="alert-icon"><AlertTriangle size={19} /></div><div><b>Boletos vencendo hoje</b><p>{dueToday.map((item) => item.company).join(", ")} · {currency.format(dueToday.reduce((sum, item) => sum + item.amount, 0))}</p></div><button onClick={() => { setActiveView("Vencimentos"); setTypeFilter("Boleto"); }}>Revisar agora <ArrowUpRight size={15} /></button></div>}
 
@@ -210,6 +233,7 @@ export default function Home() {
         </div>
       </section>
 
+      {toast && <div className="toast" role="status">{toast}</div>}
       {showForm && <div className="modal-backdrop" onClick={() => setShowForm(false)}><div className="modal" onClick={(event) => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow">Novo registro</p><h2>Adicionar documento</h2></div><button className="icon-button" onClick={() => setShowForm(false)}><X size={18} /></button></div><form onSubmit={handleSubmit}><div className="type-switch"><button type="button" className={form.type === "Nota fiscal" ? "selected" : ""} onClick={() => setForm({ ...form, type: "Nota fiscal" })}><ReceiptText size={16} /> Nota fiscal</button><button type="button" className={form.type === "Boleto" ? "selected" : ""} onClick={() => setForm({ ...form, type: "Boleto" })}><FileText size={16} /> Boleto</button></div><div className="form-grid"><label>Nome da empresa<input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Ex.: Empresa Exemplo Ltda." required /></label><label>Número / identificação<input value={form.document} onChange={(event) => setForm({ ...form, document: event.target.value })} placeholder="NF 000123 ou linha digitável" /></label><label>Valor bruto<input type="number" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="0,00" required /></label><label>Impostos / retenções<input type="number" step="0.01" value={form.taxes} onChange={(event) => setForm({ ...form, taxes: event.target.value })} placeholder="0,00" /></label><label>Data de emissão<input type="date" value={form.issueDate} onChange={(event) => setForm({ ...form, issueDate: event.target.value })} /></label><label>Vencimento<input type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} required /></label><label>Categoria<select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}><option>Operacional</option><option>Serviços</option><option>Impostos</option><option>Fornecedores</option><option>Vendas</option><option>Outros</option></select></label></div><div className="review-note"><Sparkles size={16} /><span>Os dados importados devem ser revisados antes de entrar no resumo ou na planilha.</span></div><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowForm(false)}>Cancelar</button><button type="submit" className="primary-button">Salvar registro <Check size={16} /></button></div></form></div></div>}
     </main>
   );
