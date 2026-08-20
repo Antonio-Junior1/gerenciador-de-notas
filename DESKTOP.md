@@ -25,3 +25,9 @@ XML de NF-e/NFS-e é preservado na pasta local e interpretado no servidor local 
 ## Segurança
 
 Os arquivos pessoais não devem ser versionados. `.env*`, `.local-data/` e `release/` estão no `.gitignore`. O preload do Electron usa isolamento de contexto e não habilita Node.js diretamente na interface.
+
+## Distribuição portátil por ZIP
+
+O arquivo `gerenciador-notas-portable.zip` contém a pasta completa do aplicativo Windows. O destinatário deve baixar o ZIP, clicar com o botão direito, escolher **Extrair tudo** e abrir a pasta extraída. Dentro dela, deve executar `release/win-unpacked/Gerenciador de Notas.exe`. Não é necessário instalar Node.js, pnpm ou dependências adicionais, e não se deve mover o executável para fora da pasta extraída, porque ele utiliza as DLLs e a pasta `resources` que ficam ao lado.
+
+O primeiro início pode demorar alguns segundos enquanto o servidor local é iniciado. O aplicativo funciona sem internet para cadastro, importação, persistência e exportação. O Windows pode exibir um aviso do SmartScreen por o arquivo não possuir assinatura digital; nesse caso, o usuário deve verificar a origem do ZIP antes de permitir a execução. Para criar uma nova versão portátil durante o desenvolvimento, use `pnpm desktop:portable`, depois compacte `release/win-unpacked` em ZIP.

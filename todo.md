@@ -67,3 +67,9 @@
 - [x] Testar build desktop e registrar limitações do ambiente
 - [x] Corrigir preservação da origem XML/PDF/Imagem ao salvar registros importados
 - [x] Preencher automaticamente o vencimento retornado pelo parser XML
+
+## Distribuição portátil ZIP
+- [x] Gerar pacote Windows portátil autossuficiente em ZIP
+- [x] Validar que o destinatário não precisa instalar Node.js ou pnpm
+- [x] Incluir instruções simples de extrair e abrir
+- [x] Verificar persistência de dados no uso portátil
