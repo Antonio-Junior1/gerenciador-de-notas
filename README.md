@@ -1,43 +1,62 @@
 # Gerenciador de Notas
 
-O Gerenciador de Notas é uma aplicação web para organizar notas fiscais, boletos e documentos financeiros em um só lugar. A interface foi pensada para facilitar o cadastro manual, a revisão de dados importados, o acompanhamento de vencimentos e a exportação estruturada para conferência.
+O Gerenciador de Notas é um aplicativo desktop local para organizar notas fiscais, boletos e documentos financeiros. Ele reúne cadastro manual, importação de XML, recebimento de PDF e imagem para conferência, acompanhamento de vencimentos e exportação estruturada para Excel.
 
 > **Aviso importante:** a aplicação organiza e exporta informações; ela não substitui a validação de um contador nem determina obrigações fiscais. Antes de declarar ou utilizar os dados em uma obrigação acessória, confira os valores, documentos e regras aplicáveis com um profissional contábil.
 
-## Funcionalidades do primeiro marco
+## Funcionalidades
 
-A versão inicial inclui um dashboard com movimentação mensal, quantidade de notas, boletos vencendo hoje e documentos aguardando revisão. Também possui cadastro manual de notas fiscais e boletos, filtros por mês e tipo, busca por empresa ou identificação e exportação para XLSX.
+O dashboard apresenta a movimentação mensal, o total de documentos, os boletos que vencem no dia e os itens que exigem atenção. É possível cadastrar notas fiscais e boletos manualmente, pesquisar por empresa ou identificação, filtrar por mês e tipo, acompanhar empresas e exportar os dados para XLSX.
 
-O fluxo de importação aceita arquivos XML, PDF e imagem. O XML possui uma leitura inicial de campos comuns de NF-e/NFS-e, como empresa, número, valor e data. PDFs e imagens entram em uma etapa de revisão manual para que os dados sejam conferidos e completados antes do salvamento.
+A importação de XML de NF-e/NFS-e preserva o arquivo original e lê campos comuns como empresa, número, valor, tributos e data. PDFs e imagens de boleto também são preservados na pasta local e abrem uma etapa de conferência manual. O OCR automático de PDF e imagem ainda não faz parte do escopo concluído; nenhum dado é inventado quando a extração não está disponível.
 
-## Arquitetura de deploy
+## Aplicativo desktop local
 
-O projeto usa **Next.js com App Router, TypeScript e Tailwind CSS**, uma base adequada para deploy na Vercel. A arquitetura foi mantida sem processos permanentes, com a intenção de evoluir o armazenamento e as rotas de processamento para funções serverless.
+O aplicativo usa Electron para abrir a interface Next.js em uma janela local. Os registros são persistidos em `records.json`, e os arquivos originais ficam em `documents/`, dentro da pasta de dados do usuário do aplicativo. O uso principal não depende de Vercel, PostgreSQL ou internet.
 
-O próximo marco deve integrar autenticação, banco de dados e armazenamento de objetos. Documentos originais não devem ser armazenados em colunas do banco nem em diretórios públicos; o fluxo recomendado é usar storage privado e guardar apenas metadados e referências no banco.
-
-## Execução local
+Para desenvolvimento local, é necessário ter Node.js e pnpm instalados:
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Depois, acesse `http://localhost:3000`. Para validar uma build de produção, use:
+Para abrir a versão desktop durante o desenvolvimento, use:
 
 ```bash
-NODE_ENV=production pnpm build
-pnpm start
+pnpm desktop:dev
 ```
 
-## Deploy na Vercel
+Para gerar uma build local de produção e abrir o desktop:
 
-Importe o repositório na Vercel e mantenha o framework como Next.js. A configuração de banco, autenticação e storage deverá ser cadastrada como variável de ambiente no painel da Vercel, nunca commitada no repositório. Os limites de tamanho e tempo de processamento devem ser respeitados quando a importação de documentos for migrada para rotas serverless.
+```bash
+pnpm desktop:start
+```
 
-## Dados da planilha
+## Distribuição Windows
 
-A exportação XLSX contempla tipo, empresa, identificação, valor bruto, impostos, valor líquido, emissão, vencimento, categoria, status e origem do documento. O arquivo é uma ferramenta de organização e conferência, não uma garantia de que todos os campos necessários para uma declaração estejam presentes.
+A distribuição portátil deve ser gerada em ambiente Windows nativo para garantir um executável compatível com o sistema operacional. O comando de preparação do pacote simples é:
 
-## Estado atual
+```bash
+pnpm desktop:portable-simple
+```
 
-O projeto está no primeiro marco visual e funcional, com dados mantidos no estado da sessão do navegador. Os próximos marcos são persistência por usuário, parser mais abrangente de XML, extração assistida de PDFs e imagens, revisão de dados importados, alertas persistentes e armazenamento seguro dos documentos originais.
+Depois, compacte a pasta `release/Gerenciador de Notas portátil`. Para o usuário final, o procedimento é baixar o ZIP, escolher **Extrair tudo**, abrir a pasta extraída e executar `Gerenciador de Notas.exe`. O executável deve permanecer na mesma pasta que as DLLs e a pasta `resources`. O usuário final não precisa instalar Node.js, pnpm ou dependências do projeto.
+
+O build Windows produzido no sandbox Linux é apenas um artefato de desenvolvimento e não deve ser usado como distribuição final. A validação final precisa ocorrer em uma máquina Windows x64.
+
+## Dados e backup
+
+Para fazer backup, feche o aplicativo e copie a pasta de dados completa. A restauração consiste em recolocar essa pasta no mesmo local antes de iniciar o aplicativo. Os diretórios `.local-data/`, `release/`, dependências e arquivos de ambiente não devem ser versionados.
+
+## Exportação
+
+A planilha XLSX contempla tipo, empresa, identificação, valor bruto, impostos, valor líquido, emissão, vencimento, categoria, status e origem do documento. Ela é uma ferramenta de organização e conferência, não uma garantia de que todos os campos necessários para uma declaração estejam presentes.
+
+## Stack
+
+O projeto utiliza Next.js com App Router, React, TypeScript, Tailwind CSS, Electron, `fast-xml-parser` e `xlsx`. A camada de dados local foi estruturada para permitir uma futura integração com armazenamento persistente externo, mas o modo desktop atual prioriza execução local e privacidade dos arquivos.
+
+## Segurança
+
+Arquivos pessoais, dados locais, ZIPs, executáveis e variáveis de ambiente ficam fora do Git por meio do `.gitignore`. O preload do Electron usa isolamento de contexto e não expõe Node.js diretamente à interface.

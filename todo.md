@@ -84,3 +84,15 @@
 - [x] Colocar o executável principal na raiz do pacote portátil
 - [x] Criar inicialização simples sem caminho técnico visível ao usuário
 - [x] Recriar ZIP com instruções mínimas de abrir e usar
+- [ ] Confirmar por que o executável Windows x64 gerado no sandbox é rejeitado pelo Windows
+- [ ] Parar de distribuir o pacote cross-build atual até haver binário validado
+- [ ] Gerar executável em ambiente Windows real ou estratégia de cross-build confiável
+- [ ] Gerar o executável em ambiente Windows nativo para corrigir a rejeição do binário cross-build
+- [ ] Recriar o ZIP simples a partir do build nativo
+- [ ] Validar o novo executável no Windows 11 x64 do usuário
+
+## Publicação no GitHub
+- [ ] Auditar arquivos e remover artefatos locais da publicação
+- [ ] Atualizar README e documentação desktop para o estado atual
+- [ ] Enviar o código para o repositório GitHub
+- [ ] Confirmar o commit e a URL pública do repositório
