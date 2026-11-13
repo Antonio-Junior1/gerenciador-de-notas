@@ -1,5 +1,6 @@
 allowBuilds:
-  bufferutil: set this to true or false
-  electron-winstaller: set this to true or false
+  bufferutil: false
+  electron-winstaller: false
   sharp: false
+  tesseract.js: false
   unrs-resolver: false

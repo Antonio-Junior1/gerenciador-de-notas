@@ -9,8 +9,16 @@ export async function POST(request: Request) {
     const draft = parseNfXml(xml, fileName);
     const stored = await saveLocalDocument(fileName, new TextEncoder().encode(xml));
     return NextResponse.json({
-      draft,
-      file: { name: fileName, storedName: stored.storedName },
+      draft: {
+        ...draft,
+        storedFileName: stored.storedName,
+        originalFileName: fileName,
+      },
+      file: {
+        name: fileName,
+        storedName: stored.storedName,
+        url: `/api/documents/${encodeURIComponent(stored.storedName)}`,
+      },
       message: `${fileName} foi salvo localmente e lido pelo parser server-side. Revise os campos antes de salvar.`,
     });
   } catch (error) {

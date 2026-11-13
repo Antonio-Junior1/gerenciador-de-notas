@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { NoteRecord } from "./notes";
@@ -45,4 +45,28 @@ export async function saveLocalDocument(fileName: string, bytes: Uint8Array) {
   const absolutePath = path.join(getDocumentsDir(), storedName);
   await writeFile(absolutePath, bytes);
   return { storedName, absolutePath };
+}
+
+export async function readLocalDocument(storedName: string): Promise<{ bytes: Buffer; safeName: string } | null> {
+  const safeName = path.basename(storedName);
+  if (!safeName || safeName !== storedName || safeName.includes("..")) return null;
+  const docsDir = path.resolve(getDocumentsDir());
+  const targetPath = path.resolve(docsDir, safeName);
+  if (!targetPath.startsWith(`${docsDir}${path.sep}`)) return null;
+  try {
+    const bytes = await readFile(targetPath);
+    return { bytes, safeName };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+export async function deleteLocalDocument(storedName: string): Promise<void> {
+  const safeName = path.basename(storedName);
+  if (!safeName || safeName !== storedName || safeName.includes("..")) return;
+  const docsDir = path.resolve(getDocumentsDir());
+  const targetPath = path.resolve(docsDir, safeName);
+  if (!targetPath.startsWith(`${docsDir}${path.sep}`)) return;
+  await rm(targetPath, { force: true }).catch(() => undefined);
 }

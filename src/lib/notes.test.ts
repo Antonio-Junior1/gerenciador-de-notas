@@ -27,4 +27,30 @@ describe("parseNfXml", () => {
   it("rejeita XML vazio", () => {
     expect(() => parseNfXml(" ")).toThrow("O XML está vazio.");
   });
+
+  it("rejeita XML sem campos reconhecíveis", () => {
+    expect(() => parseNfXml("<documento><campo>abc</campo></documento>", "invalido.xml")).toThrow(
+      "Não foram encontrados campos reconhecíveis de NF-e/NFS-e.",
+    );
+  });
+
+  it("converte NFS-e em rascunho revisável", () => {
+    const nfse = `<?xml version="1.0" encoding="UTF-8"?>
+    <CompNfse>
+      <Nfse>
+        <InfNfse>
+          <Numero>456</Numero>
+          <DataEmissao>2026-09-10</DataEmissao>
+          <PrestadorServico><RazaoSocial>Consultoria Silva</RazaoSocial></PrestadorServico>
+          <Servico><Valores><ValorServicos>800.00</ValorServicos><ValorIss>40.00</ValorIss></Valores></Servico>
+        </InfNfse>
+      </Nfse>
+    </CompNfse>`;
+    const result = parseNfXml(nfse, "nfse.xml");
+    expect(result.company).toBe("Consultoria Silva");
+    expect(result.document).toBe("456");
+    expect(result.amount).toBe(800);
+    expect(result.taxes).toBe(40);
+    expect(result.issueDate).toBe("2026-09-10");
+  });
 });

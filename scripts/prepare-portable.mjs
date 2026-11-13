@@ -3,7 +3,7 @@ import path from "node:path";
 
 const outputDir = path.join(process.cwd(), "release", "win-unpacked");
 const duplicatedModules = path.join(outputDir, "resources", "app", "node_modules");
-const standaloneModules = path.join(outputDir, "resources", "app", ".next", "standalone", "node_modules");
+const standaloneModules = path.join(outputDir, "resources", "srv", "node_modules");
 
 try {
   await stat(duplicatedModules);

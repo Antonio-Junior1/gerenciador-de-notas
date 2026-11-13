@@ -17,15 +17,20 @@
     "desktop:win-dir": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir",
     "desktop:portable": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir && node scripts/prepare-portable.mjs",
     "desktop:portable-simple": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win dir && node scripts/prepare-portable.mjs && node scripts/prepare-simple-portable.mjs",
+    "desktop:zip": "pnpm desktop:build-all && node scripts/prepare-zip.mjs",
+    "desktop:build-all": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win nsis dir && node scripts/prepare-portable.mjs && node scripts/prepare-simple-portable.mjs",
     "desktop:dist": "cross-env NODE_ENV=production next build --webpack && node scripts/prepare-desktop.mjs && electron-builder --win nsis"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@zxing/library": "^0.23.0",
     "fast-xml-parser": "^5.11.0",
     "lucide-react": "^1.33.0",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "tesseract.js": "^7.0.0",
+    "unpdf": "^2.1.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -47,13 +52,14 @@
   "build": {
     "appId": "com.gerenciadordenotas.desktop",
     "productName": "Gerenciador de Notas",
-    "asar": false,
+    "asar": true,
+    "afterPack": "./scripts/after-pack.cjs",
     "files": [
-      ".next/standalone/**/*",
-      ".next/static/**/*",
-      "public/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/*",
+      "!.next/**/*",
+      "!public/**/*"
     ],
     "directories": {
       "output": "release"

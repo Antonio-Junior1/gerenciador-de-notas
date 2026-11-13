@@ -9,9 +9,12 @@ CREATE TABLE IF NOT EXISTS notes (
   issue_date DATE NOT NULL,
   category TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('Pendente', 'Pago', 'Vencido', 'Revisar')),
-  source TEXT NOT NULL CHECK (source IN ('Manual', 'XML', 'PDF', 'Imagem')),
+  source TEXT NOT NULL CHECK (source IN ('Manual', 'XML', 'PDF', 'Imagem', 'Scanner', 'Planilha')),
   taxes NUMERIC(14, 2) NOT NULL DEFAULT 0,
   review_required BOOLEAN NOT NULL DEFAULT false,
+  stored_file_name TEXT,
+  original_file_name TEXT,
+  notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

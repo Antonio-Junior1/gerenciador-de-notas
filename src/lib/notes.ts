@@ -2,7 +2,24 @@ import { XMLParser } from "fast-xml-parser";
 
 export type NoteType = "Nota fiscal" | "Boleto";
 export type NoteStatus = "Pendente" | "Pago" | "Vencido" | "Revisar";
-export type NoteSource = "Manual" | "XML" | "PDF" | "Imagem";
+export type NoteSource = "Manual" | "XML" | "PDF" | "Imagem" | "Scanner" | "Planilha";
+
+export function getLocalDateString(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function getEffectiveStatus(
+  record: Pick<NoteRecord, "status" | "dueDate">,
+  today = getLocalDateString(),
+): NoteStatus {
+  if (record.status === "Pendente" && record.dueDate && record.dueDate < today) {
+    return "Vencido";
+  }
+  return record.status;
+}
 
 export type NoteRecord = {
   id: string;
@@ -18,6 +35,9 @@ export type NoteRecord = {
   taxes: number;
   createdAt: string;
   reviewRequired?: boolean;
+  storedFileName?: string;
+  originalFileName?: string;
+  notes?: string;
 };
 
 export type NoteDraft = Omit<NoteRecord, "id" | "createdAt">;
@@ -66,20 +86,30 @@ function normalizeAmount(value: string): number {
 export function parseNfXml(xml: string, fileName = "documento.xml"): NoteDraft {
   if (!xml.trim()) throw new Error("O XML está vazio.");
   const parsed = parser.parse(xml) as Record<string, unknown>;
-  const root = (parsed["nfeProc"] || parsed["NFe"] || parsed["nfe"] || parsed["enviNFe"] || parsed) as Record<string, unknown>;
-  const nestedNfe = (root["NFe"] || {}) as Record<string, unknown>;
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Não foram encontrados campos reconhecíveis de NF-e/NFS-e.");
+  }
+
+  const root = (parsed["nfeProc"] || parsed["NFe"] || parsed["nfe"] || parsed["enviNFe"] || parsed["NFSe"] || parsed["CompNfse"] || parsed) as Record<string, unknown>;
+  const nestedNfe = (root["NFe"] || root["Nfse"] || {}) as Record<string, unknown>;
   const nestedProc = (root["nfeProc"] || {}) as Record<string, unknown>;
   const procNfe = (nestedProc["NFe"] || {}) as Record<string, unknown>;
-  const infNFe = (root["infNFe"] || nestedNfe["infNFe"] || procNfe["infNFe"] || root) as Record<string, unknown>;
-  const ide = (infNFe["ide"] || {}) as Record<string, unknown>;
-  const emit = (infNFe["emit"] || {}) as Record<string, unknown>;
-  const totalNode = (infNFe["total"] || {}) as Record<string, unknown>;
+  const infNFe = (root["infNFe"] || nestedNfe["infNFe"] || procNfe["infNFe"] || root["infNFSe"] || nestedNfe["InfNfse"] || root["InfNfse"] || root) as Record<string, unknown>;
+  const ide = (infNFe["ide"] || infNFe) as Record<string, unknown>;
+  const emit = (infNFe["emit"] || infNFe["PrestadorServico"] || {}) as Record<string, unknown>;
+  const totalNode = (infNFe["total"] || infNFe["valores"] || (infNFe["Servico"] as Record<string, unknown> | undefined)?.["Valores"] || {}) as Record<string, unknown>;
   const total = (totalNode["ICMSTot"] || totalNode) as Record<string, unknown>;
-  const company = findValue(emit, ["xNome", "xFant", "CNPJ"]) || "Empresa não identificada";
-  const document = findValue(ide, ["nNF", "nDoc", "cNF"]) || fileName.replace(/\.xml$/i, "");
-  const issueDate = normalizeDate(findValue(ide, ["dhEmi", "dEmi", "dSaiEnt"]));
-  const amount = normalizeAmount(findValue(total, ["vNF", "vProd", "vTotTrib"]));
-  if (!company && !document && !amount) throw new Error("Não foram encontrados campos reconhecíveis de NF-e/NFS-e.");
+
+  const rawCompany = findValue(emit, ["xNome", "xFant", "RazaoSocial", "NomeFantasia", "CNPJ", "IdentificacaoPrestador.Cnpj"]);
+  const rawDocument = findValue(ide, ["nNF", "nNFSe", "nDoc", "cNF", "Numero"]);
+  const issueDate = normalizeDate(findValue(ide, ["dhEmi", "dEmi", "dSaiEnt", "DataEmissao", "dhProc"]));
+  const amount = normalizeAmount(findValue(total, ["vNF", "vProd", "vLiq", "ValorServicos", "ValorLiquidoNfse", "vTotTrib"]));
+  if (!rawCompany && !rawDocument && !amount && !issueDate) {
+    throw new Error("Não foram encontrados campos reconhecíveis de NF-e/NFS-e.");
+  }
+
+  const company = rawCompany || "Empresa não identificada";
+  const document = rawDocument || fileName.replace(/\.xml$/i, "");
   return {
     type: "Nota fiscal",
     company,
@@ -90,7 +120,7 @@ export function parseNfXml(xml: string, fileName = "documento.xml"): NoteDraft {
     category: "Operacional",
     status: "Revisar",
     source: "XML",
-    taxes: normalizeAmount(findValue(total, ["vTotTrib", "vICMS", "vIPI"])),
+    taxes: normalizeAmount(findValue(total, ["vTotTrib", "vICMS", "vIPI", "ValorIss"])),
     reviewRequired: true,
   };
 }
